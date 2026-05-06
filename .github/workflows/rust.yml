@@ -32,8 +32,27 @@ jobs:
       - name: Cache dependencies
         uses: Swatinem/rust-cache@v2
 
+      - name: Install cargo-zigbuild
+        if: matrix.target.os == 'linux'
+        run: pipx install cargo-zigbuild
+
       - name: Build library
-        run: cargo build --release
+        shell: bash
+        run: |
+          if [ "${{ matrix.target.os }}" == "linux" ]; then
+            mkdir -p target/release/
+            if [ "${{ matrix.target.arch }}" == "x86_64" ]; then
+              rustup target add x86_64-unknown-linux-gnu
+              cargo zigbuild --release --target x86_64-unknown-linux-gnu.2.31
+              cp target/x86_64-unknown-linux-gnu/release/libclassloader.so target/release/
+            else
+              rustup target add aarch64-unknown-linux-gnu
+              cargo zigbuild --release --target aarch64-unknown-linux-gnu.2.31
+              cp target/aarch64-unknown-linux-gnu/release/libclassloader.so target/release/
+            fi
+          else
+            cargo build --release
+          fi
 
       - name: Run tests
         run: cargo test --release
@@ -42,9 +61,7 @@ jobs:
         shell: bash
         run: |
           cd target/release/
-
           suffix="${{ matrix.target.os }}-${{ matrix.target.arch }}"
-
           case "${{ matrix.target.os }}" in
             windows)
               mv classloader.dll classloader-$suffix.dll
