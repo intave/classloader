@@ -32,6 +32,10 @@ jobs:
       - name: Cache dependencies
         uses: Swatinem/rust-cache@v2
 
+      - name: Install Zig
+        if: matrix.target.os == 'linux'
+        uses: goto-bus-stop/setup-zig@v2
+
       - name: Install cargo-zigbuild
         if: matrix.target.os == 'linux'
         run: pipx install cargo-zigbuild
